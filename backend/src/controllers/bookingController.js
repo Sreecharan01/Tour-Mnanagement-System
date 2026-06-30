@@ -30,6 +30,27 @@ const createBooking = async (req, res) => {
 
     await booking.populate(['tour', 'user']);
 
+    // Send confirmation email
+    const sendEmail = require('../utils/sendEmail');
+    const { getBookingConfirmationTemplate } = require('../utils/emailTemplates');
+
+    const emailHtml = getBookingConfirmationTemplate({
+      userName: req.user.name,
+      tourTitle: tour.title,
+      destination: tour.destination,
+      travelDate: travelDate,
+      adults: adults,
+      children: children || 0,
+      totalAmount: totalAmount,
+      coverImage: tour.coverImage,
+    });
+
+    await sendEmail({
+      email: req.user.email,
+      subject: `Booking Confirmed: ${tour.title}`,
+      html: emailHtml,
+    });
+
     res.status(201).json({
       success: true,
       message: 'Booking created successfully!',
